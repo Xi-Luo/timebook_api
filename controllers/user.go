@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"timebook_api/models"
@@ -22,6 +23,8 @@ func (c *UserController) URLMapping() {
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
 	c.Mapping("Delete", c.Delete)
+	c.Mapping("Login", c.Login)
+	c.Mapping("Account", c.Account)
 }
 
 // Post ...
@@ -32,17 +35,90 @@ func (c *UserController) URLMapping() {
 // @Failure 403 body is empty
 // @router / [post]
 func (c *UserController) Post() {
+	var data map[string]interface{}
 	var v models.User
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &data); err == nil {
+		v.UserName = data["UserName"].(string)
+		v.Password = data["Password"].(string)
 		if _, err := models.AddUser(&v); err == nil {
 			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = v
+			c.Data["json"] = "成功"
 		} else {
 			c.Data["json"] = err.Error()
 		}
 	} else {
 		c.Data["json"] = err.Error()
 	}
+	c.ServeJSON()
+}
+
+// Post ...
+// @Title Post
+// @Description create User
+// @Param	body		body 	models.User	true		"body for User content"
+// @Success 201 {int} models.User
+// @Failure 403 body is empty
+// @router /login [post]
+func (c *UserController) Login() {
+	var data map[string]interface{}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &data); err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	s := data["UserName"].(string)
+	u, err := models.GetUserByUsername(s)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	} else {
+		p := data["Password"].(string)
+		if u.Password == p {
+			c.Data["json"] = u.Id
+			c.ServeJSON()
+			return
+		}
+	}
+	c.ServeJSON()
+}
+
+// Account ...
+// @Title Post
+// @Description create User
+// @Param	body		body 	models.User	true		"body for User content"
+// @Success 201 {int} models.User
+// @Failure 403 body is empty
+// @router /account [post]
+func (c *UserController) Account() {
+	var data map[string]interface{}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &data); err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	ids := data["Id"].(string)
+	id, err := strconv.Atoi(ids)
+	v, err := models.GetUserById(id)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	op := data["oldPass"].(string)
+	np := data["newPass"].(string)
+
+	if v.Password != op {
+		c.Data["json"] = "No"
+		c.ServeJSON()
+		return
+	}
+	v.Password = np
+
+	fmt.Println(v)
+	models.UpdateUserById(v)
+	c.Data["json"] = "OK"
 	c.ServeJSON()
 }
 

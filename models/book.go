@@ -11,14 +11,17 @@ import (
 )
 
 type Book struct {
-	Id        int       `orm:"column(id);auto"`
-	UserId    int       `orm:"column(user_id)"`
-	SendtoId  int       `orm:"column(sendto_id)"`
-	Date      time.Time `orm:"column(date);type(date)"`
-	StartTime time.Time `orm:"column(start_time);type(time)"`
-	EndTime   time.Time `orm:"column(end_time);type(time)"`
-	Event     string    `orm:"column(event);size(255)"`
-	IsRead    int8      `orm:"column(is_read)"`
+	Id          int       `orm:"column(id);auto"`
+	UserId      int       `orm:"column(user_id)"`
+	UserName    string    `orm:"column(user_name);size(255)"`
+	SendToId    int       `orm:"column(send_To_id)"`
+	SendToName  string    `orm:"column(send_To_name);size(255)"`
+	Date        time.Time `orm:"column(date);type(date)"`
+	StartTime   time.Time `orm:"column(start_time);type(time)"`
+	EndTime     time.Time `orm:"column(end_time);type(time)"`
+	Event       string    `orm:"column(event);size(255)"`
+	IsAccepted  int       `orm:"column(is_accepted)"`
+	ElseMessage string    `orm:"column(else_message);size(255)"`
 }
 
 func (t *Book) TableName() string {
@@ -35,6 +38,55 @@ func AddBook(m *Book) (id int64, err error) {
 	o := orm.NewOrm()
 	id, err = o.Insert(m)
 	return
+}
+
+func GetBookByUserId(id int) (m []map[string]interface{}, err error) {
+	cond := orm.NewCondition()
+	cond1 := cond.And("UserId__iexact", id)
+	query := orm.NewOrm().QueryTable(new(Book))
+	query = query.SetCond(cond1)
+	var books []Book
+	_, err = query.Limit(0, 0).All(&books)
+	var booksData []map[string]interface{}
+	for _, book := range books {
+		dt := book.Date.Format("2006-01-02")
+		st := book.StartTime.Format("15:04:05")
+		et := book.EndTime.Format("15:04:05")
+		var aStr string
+		if book.IsAccepted == 0 {
+			aStr = "审核中"
+		} else {
+			if book.IsAccepted == 1 {
+				aStr = "已通过"
+			} else {
+				aStr = "已拒绝"
+			}
+		}
+		temp := map[string]interface{}{"date": dt, "startTime": st, "endTime": et, "username": book.SendToName, "elseMessage": book.ElseMessage, "content": book.Event, "isAccepted": book.IsAccepted, "aStr": aStr}
+		booksData = append(booksData, temp)
+	}
+	return booksData, nil
+
+}
+
+func GetBookByMeId(id int) (m []map[string]interface{}, err error) {
+	cond := orm.NewCondition()
+	cond1 := cond.And("SendToId__iexact", id)
+	query := orm.NewOrm().QueryTable(new(Book))
+	query = query.SetCond(cond1)
+	var books []Book
+	_, err = query.Limit(0, 0).All(&books)
+	var booksData []map[string]interface{}
+	for _, book := range books {
+		if book.IsAccepted == 0 {
+			dt := book.Date.Format("2006-01-02")
+			st := book.StartTime.Format("15:04:05")
+			et := book.EndTime.Format("15:04:05")
+			temp := map[string]interface{}{"id": book.Id, "username": book.UserName, "date": dt, "startTime": st, "endTime": et, "content": book.Event}
+			booksData = append(booksData, temp)
+		}
+	}
+	return booksData, nil
 }
 
 // GetBookById retrieves Book by Id. Returns error if

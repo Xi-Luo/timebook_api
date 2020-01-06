@@ -52,47 +52,20 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
-	beego.GlobalControllerRouter["timebook_api/controllers:BookreplyController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:BookreplyController"],
+	beego.GlobalControllerRouter["timebook_api/controllers:BookController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:BookController"],
 		beego.ControllerComments{
-			Method:           "Post",
-			Router:           `/`,
+			Method:           "SendToMe",
+			Router:           `/sendMe/:id`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["timebook_api/controllers:BookController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:BookController"],
+		beego.ControllerComments{
+			Method:           "Update",
+			Router:           `/update`,
 			AllowHTTPMethods: []string{"post"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter["timebook_api/controllers:BookreplyController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:BookreplyController"],
-		beego.ControllerComments{
-			Method:           "GetAll",
-			Router:           `/`,
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter["timebook_api/controllers:BookreplyController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:BookreplyController"],
-		beego.ControllerComments{
-			Method:           "GetOne",
-			Router:           `/:id`,
-			AllowHTTPMethods: []string{"get"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter["timebook_api/controllers:BookreplyController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:BookreplyController"],
-		beego.ControllerComments{
-			Method:           "Put",
-			Router:           `/:id`,
-			AllowHTTPMethods: []string{"put"},
-			MethodParams:     param.Make(),
-			Filters:          nil,
-			Params:           nil})
-
-	beego.GlobalControllerRouter["timebook_api/controllers:BookreplyController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:BookreplyController"],
-		beego.ControllerComments{
-			Method:           "Delete",
-			Router:           `/:id`,
-			AllowHTTPMethods: []string{"delete"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
@@ -142,6 +115,24 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
+	beego.GlobalControllerRouter["timebook_api/controllers:TimeController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:TimeController"],
+		beego.ControllerComments{
+			Method:           "GetFreeTime",
+			Router:           `/free/:id`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["timebook_api/controllers:TimeController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:TimeController"],
+		beego.ControllerComments{
+			Method:           "InitTable",
+			Router:           `/init/:id`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
 	beego.GlobalControllerRouter["timebook_api/controllers:UserController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:UserController"],
 		beego.ControllerComments{
 			Method:           "Post",
@@ -183,6 +174,24 @@ func init() {
 			Method:           "Delete",
 			Router:           `/:id`,
 			AllowHTTPMethods: []string{"delete"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["timebook_api/controllers:UserController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:UserController"],
+		beego.ControllerComments{
+			Method:           "Account",
+			Router:           `/account`,
+			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["timebook_api/controllers:UserController"] = append(beego.GlobalControllerRouter["timebook_api/controllers:UserController"],
+		beego.ControllerComments{
+			Method:           "Login",
+			Router:           `/login`,
+			AllowHTTPMethods: []string{"post"},
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})

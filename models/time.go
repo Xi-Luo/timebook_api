@@ -47,6 +47,48 @@ func GetTimeById(id int) (v *Time, err error) {
 	return nil, err
 }
 
+func GetTimeByUserId(id string) (m []map[string]interface{}, err error) {
+	cond := orm.NewCondition()
+
+	cond1 := cond.And("UserId__iexact", id)
+	query := orm.NewOrm().QueryTable(new(Time))
+	query = query.SetCond(cond1)
+	var times []Time
+	_, err = query.Limit(0, 0).All(&times)
+	var timesData []map[string]interface{}
+	for _, time := range times {
+		dt := time.Date.Format("2006-01-02")
+		st := time.StartTime.Format("15:04:05")
+		et := time.EndTime.Format("15:04:05")
+		temp := map[string]interface{}{"date": dt, "starttime": st, "endtime": et, "event": time.Event, "isfree": time.IsFree}
+		timesData = append(timesData, temp)
+	}
+	return timesData, nil
+
+}
+
+func GetFreeTimeByUserId(id int) (m []map[string]interface{}, err error) {
+	cond := orm.NewCondition()
+
+	cond1 := cond.And("UserId__iexact", id)
+	query := orm.NewOrm().QueryTable(new(Time))
+	query = query.SetCond(cond1)
+	var times []Time
+	_, err = query.Limit(0, 0).All(&times)
+	var timesData []map[string]interface{}
+	for _, time := range times {
+		if time.IsFree == 0 {
+			dt := time.Date.Format("2006-01-02")
+			st := time.StartTime.Format("15:04:05")
+			et := time.EndTime.Format("15:04:05")
+			temp := map[string]interface{}{"date": dt, "starttime": st, "endtime": et}
+			timesData = append(timesData, temp)
+		}
+	}
+	return timesData, nil
+
+}
+
 // GetAllTime retrieves all Time matches certain condition. Returns empty list if
 // no records exist
 func GetAllTime(query map[string]string, fields []string, sortby []string, order []string,

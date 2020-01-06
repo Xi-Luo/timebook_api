@@ -10,7 +10,7 @@ import (
 
 type User struct {
 	Id       int    `orm:"column(id);auto"`
-	UserName string `orm:"column(user_name);size(255)"`
+	UserName string `orm:"column(user_name);size(255);unique"`
 	Password string `orm:"column(password);size(255)"`
 }
 
@@ -20,6 +20,20 @@ func (t *User) TableName() string {
 
 func init() {
 	orm.RegisterModel(new(User))
+}
+
+func GetUserByUsername(u string) (v *User, err error) {
+	cond := orm.NewCondition()
+	cond1 := cond.And("UserName__iexact", u)
+	query := orm.NewOrm().QueryTable(new(User))
+	query = query.SetCond(cond1)
+	var users []User
+	_, err = query.Limit(0, 0).All(&users)
+	_, err = query.Count()
+	for _, user := range users {
+		return &user, nil
+	}
+	return nil, err
 }
 
 // AddUser insert a new User into database and returns

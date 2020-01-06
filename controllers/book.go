@@ -3,8 +3,10 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
+	"time"
 	"timebook_api/models"
 
 	"github.com/astaxie/beego"
@@ -22,6 +24,8 @@ func (c *BookController) URLMapping() {
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
 	c.Mapping("Delete", c.Delete)
+	c.Mapping("SendToMe", c.SendToMe)
+	c.Mapping("Update", c.Update)
 }
 
 // Post ...
@@ -32,18 +36,106 @@ func (c *BookController) URLMapping() {
 // @Failure 403 body is empty
 // @router / [post]
 func (c *BookController) Post() {
-	var v models.Book
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if _, err := models.AddBook(&v); err == nil {
-			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = v
-		} else {
-			c.Data["json"] = err.Error()
-		}
-	} else {
+	var data map[string]interface{}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &data); err != nil {
 		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
 	}
+
+	var v models.Book
+	var err error
+
+	timeLayout := "2006-01-02 15:04:05"
+	loc, _ := time.LoadLocation("Local")
+	ds := data["Date"].(string)
+	dt, _ := time.ParseInLocation(timeLayout, ds, loc)
+	v.Date = dt
+
+	ss := data["StartTime"].(string)
+	st, _ := time.ParseInLocation(timeLayout, ss, loc)
+	v.StartTime = st
+
+	es := data["EndTime"].(string)
+	et, _ := time.ParseInLocation(timeLayout, es, loc)
+	v.EndTime = et
+
+	UserIdStr := data["UserId"].(string)
+	v.UserId, err = strconv.Atoi(UserIdStr)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	UserNameStr := data["UserName"].(string)
+	v.UserName = UserNameStr
+	SendToStr := data["SendToName"].(string)
+	v.SendToName = SendToStr
+	u, err := models.GetUserByUsername(SendToStr)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	v.SendToId = u.Id
+	EventStr := data["Event"].(string)
+	v.Event = EventStr
+	v.IsAccepted = 0
+	_, err = models.AddBook(&v)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	c.Data["json"] = v
 	c.ServeJSON()
+}
+
+//func (c *BookController) Post() {
+//	var v models.Book
+//	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+//		if _, err := models.AddBook(&v); err == nil {
+//			c.Ctx.Output.SetStatus(201)
+//			c.Data["json"] = v
+//		} else {
+//			c.Data["json"] = err.Error()
+//		}
+//	} else {
+//		c.Data["json"] = err.Error()
+//	}
+//	c.ServeJSON()
+//}
+
+// UpdateBook ...
+// @Title Post
+// @Description create Book
+// @Param	body		body 	models.Book	true		"body for Book content"
+// @Success 201 {int} models.Book
+// @Failure 403 body is empty
+// @router /update [post]
+func (c *BookController) Update() {
+	var data map[string]interface{}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &data); err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	idStr := data["isAccepted"].(string)
+	id, _ := strconv.Atoi(idStr)
+	v, err := models.GetBookById(id)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	is := data["isAccepted"].(string)
+	i, _ := strconv.Atoi(is)
+	v.IsAccepted = i
+	elseM := data["elseMessage"].(string)
+	v.ElseMessage = elseM
+	c.Data["json"] = v
+	c.ServeJSON()
+
 }
 
 // GetOne ...
@@ -54,14 +146,53 @@ func (c *BookController) Post() {
 // @Failure 403 :id is empty
 // @router /:id [get]
 func (c *BookController) GetOne() {
-	idStr := c.Ctx.Input.Param(":id")
-	id, _ := strconv.Atoi(idStr)
-	v, err := models.GetBookById(id)
+	userIdStr := c.Ctx.Input.Param(":id")
+	id, _ := strconv.Atoi(userIdStr)
+	books, err := models.GetBookByUserId(id)
 	if err != nil {
 		c.Data["json"] = err.Error()
-	} else {
-		c.Data["json"] = v
+		c.ServeJSON()
+		return
 	}
+	response := make(map[string]interface{})
+	response["booksList"] = books
+	fmt.Println(response)
+	c.Data["json"] = response
+	c.ServeJSON()
+}
+
+//func (c *BookController) GetOne() {
+//	idStr := c.Ctx.Input.Param(":id")
+//	id, _ := strconv.Atoi(idStr)
+//	v, err := models.GetBookById(id)
+//	if err != nil {
+//		c.Data["json"] = err.Error()
+//	} else {
+//		c.Data["json"] = v
+//	}
+//	c.ServeJSON()
+//}
+
+// GetOne ...
+// @Title Get One
+// @Description get Book by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Book
+// @Failure 403 :id is empty
+// @router /sendMe/:id [get]
+func (c *BookController) SendToMe() {
+	idStr := c.Ctx.Input.Param(":id")
+	id, _ := strconv.Atoi(idStr)
+	books, err := models.GetBookByMeId(id)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	response := make(map[string]interface{})
+	response["booksList"] = books
+	fmt.Println(response)
+	c.Data["json"] = response
 	c.ServeJSON()
 }
 

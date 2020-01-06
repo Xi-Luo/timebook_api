@@ -22,12 +22,6 @@ func init() {
 			),
 		),
 
-		beego.NSNamespace("/bookreply",
-			beego.NSInclude(
-				&controllers.BookreplyController{},
-			),
-		),
-
 		beego.NSNamespace("/time",
 			beego.NSInclude(
 				&controllers.TimeController{},

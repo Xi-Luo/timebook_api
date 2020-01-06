@@ -3,8 +3,10 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
+	"time"
 	"timebook_api/models"
 
 	"github.com/astaxie/beego"
@@ -22,6 +24,8 @@ func (c *TimeController) URLMapping() {
 	c.Mapping("GetAll", c.GetAll)
 	c.Mapping("Put", c.Put)
 	c.Mapping("Delete", c.Delete)
+	c.Mapping("InitTable", c.InitTable)
+	c.Mapping("GetFreeTime", c.GetFreeTime)
 }
 
 // Post ...
@@ -32,24 +36,120 @@ func (c *TimeController) URLMapping() {
 // @Failure 403 body is empty
 // @router / [post]
 func (c *TimeController) Post() {
-	var v models.Time
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
-		if _, err := models.AddTime(&v); err == nil {
-			c.Ctx.Output.SetStatus(201)
-			c.Data["json"] = v
-		} else {
-			c.Data["json"] = err.Error()
-		}
-	} else {
+	var data map[string]interface{}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &data); err != nil {
 		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
 	}
+	fmt.Println(data)
+	var v models.Time
+	var err error
+
+	timeLayout := "2006-01-02 15:04:05"
+	loc, _ := time.LoadLocation("Local")
+	ds := data["Date"].(string)
+	dt, _ := time.ParseInLocation(timeLayout, ds, loc)
+	v.Date = dt
+
+	ss := data["StartTime"].(string)
+	st, _ := time.ParseInLocation(timeLayout, ss, loc)
+	v.StartTime = st
+
+	es := data["EndTime"].(string)
+	et, _ := time.ParseInLocation(timeLayout, es, loc)
+	v.EndTime = et
+
+	fmt.Println(data["UserId"].(string))
+	UserIdStr := data["UserId"].(string)
+	v.UserId, err = strconv.Atoi(UserIdStr)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	v.IsFree = 0
+	_, err = models.AddTime(&v)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	c.Data["json"] = v
+	c.ServeJSON()
+
+}
+
+//func (c *TimeController) Post() {
+//	var v models.Time
+//	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &v); err == nil {
+//		if _, err := models.AddTime(&v); err == nil {
+//			c.Ctx.Output.SetStatus(201)
+//			c.Data["json"] = v
+//		} else {
+//			c.Data["json"] = err.Error()
+//		}
+//	} else {
+//		c.Data["json"] = err.Error()
+//	}
+//	c.ServeJSON()
+//}
+
+// InitTable ...
+// @Title Get One
+// @Description get User by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.User
+// @Failure 403 :id is empty
+// @router /init/:id [get]
+func (c *TimeController) InitTable() {
+	idStr := c.Ctx.Input.Param(":id")
+	times, err := models.GetTimeByUserId(idStr)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	response := make(map[string]interface{})
+	response["timesList"] = times
+	fmt.Println(response)
+	c.Data["json"] = response
+	c.ServeJSON()
+}
+
+// GetFreeTime ...
+// @Title Get One
+// @Description get User by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.User
+// @Failure 403 :id is empty
+// @router /free/:id [get]
+func (c *TimeController) GetFreeTime() {
+	idStr := c.Ctx.Input.Param(":id")
+	u, err := models.GetUserByUsername(idStr)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	times, err := models.GetFreeTimeByUserId(u.Id)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+	response := make(map[string]interface{})
+	response["timesList"] = times
+	fmt.Println(response)
+	c.Data["json"] = response
 	c.ServeJSON()
 }
 
 // GetOne ...
 // @Title Get One
 // @Description get Time by id
-// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	body		body 	models.Time	true		"body for Time content"
 // @Success 200 {object} models.Time
 // @Failure 403 :id is empty
 // @router /:id [get]
@@ -60,6 +160,7 @@ func (c *TimeController) GetOne() {
 	if err != nil {
 		c.Data["json"] = err.Error()
 	} else {
+		//t1 := v.StartTime.Format("15:04:05")
 		c.Data["json"] = v
 	}
 	c.ServeJSON()
