@@ -120,7 +120,7 @@ func (c *BookController) Update() {
 		c.ServeJSON()
 		return
 	}
-	idStr := data["isAccepted"].(string)
+	idStr := data["id"].(string)
 	id, _ := strconv.Atoi(idStr)
 	v, err := models.GetBookById(id)
 	if err != nil {
@@ -128,11 +128,13 @@ func (c *BookController) Update() {
 		c.ServeJSON()
 		return
 	}
+
 	is := data["isAccepted"].(string)
 	i, _ := strconv.Atoi(is)
 	v.IsAccepted = i
 	elseM := data["elseMessage"].(string)
 	v.ElseMessage = elseM
+	err = models.UpdateBookById(v)
 	c.Data["json"] = v
 	c.ServeJSON()
 
